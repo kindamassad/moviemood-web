@@ -1,0 +1,5 @@
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=(localdb)\\MSSQLLocalDB;Database=moviemood_database;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True"
+  }
+}

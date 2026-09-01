@@ -1,0 +1,241 @@
+@model AccountProfileViewModel
+@{
+    ViewData["Title"] = "Profile";
+}
+
+@section Styles {
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    body { font-family: 'Poppins', 'Netflix Sans', sans-serif; }
+    header { padding: 120px 0 20px; }
+    .profile-name { font-size: 2.5rem; font-weight: 700; margin-bottom: 15px; }
+    .profile-meta { display: flex; gap: 15px; align-items: center; flex-wrap: wrap; color: #8c8c8c; font-size: 0.95rem; }
+    .profile-meta i { color: var(--mm-yellow); margin-right: 5px; }
+    .section-title { font-size: 1.8rem; font-weight: 600; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid var(--mm-red); display: flex; align-items: center; gap: 15px; }
+    .section-title i { color: var(--mm-red); }
+    .movie-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 25px; margin-bottom: 50px; }
+    .movie-card-container { position: relative; border-radius: 12px; overflow: hidden; background: #1a1a1f; transition: all 0.3s ease; }
+    .movie-card-container:hover { transform: translateY(-10px); box-shadow: 0 15px 30px rgba(229, 9, 20, 0.3); }
+    .movie-poster { width: 100%; height: 300px; object-fit: cover; display: block; }
+    .movie-actions { position: absolute; top: 15px; right: 15px; opacity: 0; transition: opacity 0.3s; }
+    .movie-card-container:hover .movie-actions { opacity: 1; }
+    .btn-remove-from-list { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: rgba(20, 20, 24, 0.8); border: 1px solid var(--mm-red); color: var(--mm-red); cursor: pointer; }
+    .empty-list-message { background: rgba(30, 30, 35, 0.7); border-radius: 12px; padding: 40px 20px; text-align: center; margin: 20px 0; border: 2px dashed rgba(255, 255, 255, 0.1); }
+    .empty-list-message i { font-size: 3rem; color: #8c8c8c; margin-bottom: 20px; display: block; }
+    .password-section { background: rgba(30, 30, 35, 0.7); border-radius: 12px; padding: 30px; margin-bottom: 40px; border: 1px solid rgba(255, 255, 255, 0.08); }
+    .password-section form { display: grid; gap: 15px; max-width: 420px; }
+    .password-section input { background: #0f0f12; border: 1px solid rgba(255, 255, 255, 0.15); color: #fff; padding: 12px 14px; border-radius: 8px; }
+    .password-section button[type="submit"] { background: var(--mm-red); border: none; color: #fff; padding: 12px 18px; border-radius: 8px; font-weight: 600; width: fit-content; }
+    .password-feedback.success { background: rgba(40, 167, 69, 0.15); color: #7dffb3; border: 1px solid rgba(40, 167, 69, 0.35); padding: 10px 14px; border-radius: 8px; max-width: 420px; }
+    .password-feedback.error { background: rgba(229, 9, 20, 0.15); color: #ff8a8a; border: 1px solid rgba(229, 9, 20, 0.35); padding: 10px 14px; border-radius: 8px; max-width: 420px; }
+    .btn-view-all, .btn-delete-list { padding: 8px 15px; border-radius: 6px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-view-all { border: 1px solid rgba(255,255,255,0.3); color: white; }
+    .btn-delete-list { border: 1px solid var(--mm-red); color: var(--mm-red); background: transparent; cursor: pointer; }
+    .custom-list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+</style>
+}
+
+<header>
+    <div class="container">
+        <h1 class="profile-name">@@@Model.Username</h1>
+        <div class="profile-meta">
+            <span><i class="fas fa-envelope"></i> @Model.Email</span>
+            <span>|</span>
+            <span><i class="fas fa-calendar-star"></i> Member since @Model.CreatedAt.ToString("MM/yyyy")</span>
+            <span>|</span>
+            <span><i class="fas fa-bookmark"></i> @Model.WatchlistCount Watchlist Movies</span>
+            <span>|</span>
+            <span><i class="fas fa-heart"></i> @Model.FavoritesCount Favorite Movies</span>
+            <span>|</span>
+            <span><i class="fas fa-list"></i> @Model.CustomListsCount Custom Lists</span>
+        </div>
+    </div>
+</header>
+
+<main class="container lists-container">
+    <section class="password-section">
+        <h2 class="section-title"><i class="fas fa-key"></i> Change Password</h2>
+        <form asp-action="Index" method="post">
+            @Html.AntiForgeryToken()
+            <div class="password-field">
+                <input type="password" asp-for="ChangePassword.CurrentPassword" placeholder="Current password" required>
+                <button type="button" class="password-toggle" aria-label="Show password"><i class="fas fa-eye"></i></button>
+            </div>
+            <div class="password-field">
+                <input type="password" asp-for="ChangePassword.NewPassword" placeholder="New password" required minlength="6">
+                <button type="button" class="password-toggle" aria-label="Show password"><i class="fas fa-eye"></i></button>
+            </div>
+            <div class="password-field">
+                <input type="password" asp-for="ChangePassword.ConfirmPassword" placeholder="Confirm new password" required minlength="6">
+                <button type="button" class="password-toggle" aria-label="Show password"><i class="fas fa-eye"></i></button>
+            </div>
+            <button type="submit">Save new password</button>
+        </form>
+        @if (!string.IsNullOrEmpty(Model.ChangePassword.SuccessMessage))
+        {
+            <div class="password-feedback success mt-3">@Model.ChangePassword.SuccessMessage</div>
+        }
+        else if (!string.IsNullOrEmpty(Model.ChangePassword.ErrorMessage))
+        {
+            <div class="password-feedback error mt-3">@Model.ChangePassword.ErrorMessage</div>
+        }
+    </section>
+
+    <section class="list-section mb-5">
+        <h2 class="section-title"><i class="fas fa-bookmark"></i> Watchlist</h2>
+        @if (Model.Watchlist.Count > 0)
+        {
+            <div class="custom-list-header">
+                <a asp-controller="Lists" asp-action="Index" asp-route-list_type="watchlist" class="btn-view-all">
+                    <i class="fas fa-external-link-alt"></i> View All
+                </a>
+            </div>
+            <div class="movie-grid">
+                @foreach (var movieId in Model.Watchlist)
+                {
+                    if (!Model.MoviesData.TryGetValue(movieId, out var movie)) continue;
+                    <div class="movie-card-container">
+                        <a asp-controller="Movies" asp-action="Details" asp-route-id="@movie.Id">
+                            <img src="@movie.PosterUrl" class="movie-poster" alt="@movie.Title">
+                        </a>
+                        <div class="movie-actions">
+                            <button class="btn-remove-from-list" data-movie-id="@movie.Id" data-list-type="watchlist" title="Remove">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="empty-list-message"><i class="fas fa-bookmark"></i><h3>Your watchlist is empty</h3></div>
+        }
+    </section>
+
+    <section class="list-section mb-5">
+        <h2 class="section-title"><i class="fas fa-heart"></i> Favorites</h2>
+        @if (Model.Favorites.Count > 0)
+        {
+            <div class="custom-list-header">
+                <a asp-controller="Lists" asp-action="Index" asp-route-list_type="favorites" class="btn-view-all">
+                    <i class="fas fa-external-link-alt"></i> View All
+                </a>
+            </div>
+            <div class="movie-grid">
+                @foreach (var movieId in Model.Favorites)
+                {
+                    if (!Model.MoviesData.TryGetValue(movieId, out var movie)) continue;
+                    <div class="movie-card-container">
+                        <a asp-controller="Movies" asp-action="Details" asp-route-id="@movie.Id">
+                            <img src="@movie.PosterUrl" class="movie-poster" alt="@movie.Title">
+                        </a>
+                        <div class="movie-actions">
+                            <button class="btn-remove-from-list" data-movie-id="@movie.Id" data-list-type="favorites" title="Remove">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="empty-list-message"><i class="fas fa-heart"></i><h3>Your favorites list is empty</h3></div>
+        }
+    </section>
+
+    <section class="list-section">
+        <h2 class="section-title"><i class="fas fa-list"></i> My Lists</h2>
+        @if (Model.CustomLists.Count > 0)
+        {
+            @foreach (var (listName, movies) in Model.CustomLists)
+            {
+                <div class="custom-list mb-4">
+                    <div class="custom-list-header">
+                        <h3>@listName</h3>
+                        <div class="d-flex gap-2">
+                            @if (movies.Count > 0)
+                            {
+                                <a asp-controller="Lists" asp-action="Index" asp-route-list_type="custom" asp-route-list_name="@listName" class="btn-view-all">
+                                    <i class="fas fa-external-link-alt"></i> View All
+                                </a>
+                            }
+                            <button class="btn-delete-list" data-list-name="@listName"><i class="fas fa-trash"></i> Delete</button>
+                        </div>
+                    </div>
+                    @if (movies.Count > 0)
+                    {
+                        <div class="movie-grid">
+                            @foreach (var movieId in movies)
+                            {
+                                if (!Model.MoviesData.TryGetValue(movieId, out var movie)) continue;
+                                <div class="movie-card-container">
+                                    <a asp-controller="Movies" asp-action="Details" asp-route-id="@movie.Id">
+                                        <img src="@movie.PosterUrl" class="movie-poster" alt="@movie.Title">
+                                    </a>
+                                    <div class="movie-actions">
+                                        <button class="btn-remove-from-list" data-movie-id="@movie.Id" data-list-type="custom" data-list-name="@listName">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-list-message"><i class="fas fa-film"></i><h3>This list is empty</h3></div>
+                    }
+                </div>
+            }
+        }
+        else
+        {
+            <div class="empty-list-message"><i class="fas fa-list"></i><h3>You have not created any custom lists yet</h3></div>
+        }
+    </section>
+</main>
+
+@section Scripts {
+    <script src="~/js/script.js" asp-append-version="true"></script>
+    <script src="~/js/password-toggle.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+            function postForm(url, params) {
+                return fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    credentials: 'include',
+                    body: new URLSearchParams(params)
+                });
+            }
+            document.querySelectorAll('.btn-remove-from-list').forEach(button => {
+                button.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    const params = {
+                        movieId: this.dataset.movieId,
+                        listType: this.dataset.listType
+                    };
+                    if (this.dataset.listName) params.listName = this.dataset.listName;
+                    const res = await postForm('/Lists/ToggleMovie', params);
+                    const data = await res.json();
+                    if (data.success) this.closest('.movie-card-container')?.remove();
+                });
+            });
+            document.querySelectorAll('.btn-delete-list').forEach(button => {
+                button.addEventListener('click', async function() {
+                    const listName = this.dataset.listName;
+                    if (!confirm(`Delete list "${listName}"?`)) return;
+                    const res = await postForm('/Lists/DeleteList', { listName });
+                    const data = await res.json();
+                    if (data.success) this.closest('.custom-list')?.remove();
+                });
+            });
+        });
+    </script>
+}

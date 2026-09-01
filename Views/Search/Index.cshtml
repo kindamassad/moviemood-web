@@ -1,0 +1,160 @@
+@model SearchIndexViewModel
+@{
+    ViewData["Title"] = "Search";
+}
+
+@section Styles {
+<style>
+    .search-results { padding-top: 120px; min-height: calc(100vh - 120px); }
+    .filters-container { background-color: rgba(20, 20, 20, 0.95); padding: 25px; border-radius: 8px; margin-bottom: 30px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); }
+    .filter-label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--mm-light); font-size: 0.95rem; }
+    .filter-select, .filter-input { width: 100%; padding: 10px 15px; background-color: rgba(30, 30, 30, 0.9); border: 1px solid rgba(255, 255, 255, 0.2); color: white; border-radius: 6px; }
+    .filter-buttons { margin-top: 20px; display: flex; gap: 15px; align-items: center; }
+    .filter-buttons .btn-primary { background-color: var(--mm-red); border: 1px solid var(--mm-red); padding: 12px 25px; border-radius: 6px; font-weight: 600; color: white; }
+    .reset-filters { background-color: rgba(30, 30, 30, 0.9); color: var(--mm-light); border: 1px solid rgba(255, 255, 255, 0.2); padding: 12px 25px; border-radius: 6px; font-weight: 600; text-decoration: none; }
+    .movie-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; margin-bottom: 40px; }
+    .movie-card-container { position: relative; border-radius: 4px; overflow: hidden; transition: transform 0.3s, box-shadow 0.3s; }
+    .movie-card-container:hover { transform: scale(1.05); z-index: 10; box-shadow: 0 5px 15px rgba(229, 9, 20, 0.4); }
+    .movie-poster { width: 100%; height: 330px; object-fit: cover; border-radius: 4px; }
+    .movie-info-overlay { position: absolute; bottom: 0; left: 0; right: 0; background: var(--mm-dark); padding: 15px; transform: translateY(100%); transition: transform 0.3s; }
+    .movie-card-container:hover .movie-info-overlay { transform: translateY(0); }
+    .pagination { display: flex; gap: 8px; justify-content: center; margin: 40px 0; }
+    .page-link { color: white; background-color: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px 15px; border-radius: 4px; text-decoration: none; font-weight: 600; }
+    .page-item.active .page-link { background-color: var(--mm-red); border-color: var(--mm-red); }
+</style>
+}
+
+<section class="container search-results">
+    <div class="search-header">
+        <h1 class="mb-4">@(Model.Discover ? "Discover Movies" : (string.IsNullOrEmpty(Model.Query) ? "Search Movies" : $"Results for \"{Model.Query}\""))</h1>
+    </div>
+
+    <form method="get" class="filters-container">
+        @if (!string.IsNullOrEmpty(Model.Query))
+        {
+            <input type="hidden" name="query" value="@Model.Query">
+        }
+        @if (Model.Discover)
+        {
+            <input type="hidden" name="discover" value="true">
+        }
+        <div class="row">
+            <div class="col-md-3 mb-3">
+                <label class="filter-label">Year From</label>
+                <input type="number" name="year_from" class="filter-input" value="@Model.YearFrom" placeholder="e.g. 2000">
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="filter-label">Year To</label>
+                <input type="number" name="year_to" class="filter-input" value="@Model.YearTo" placeholder="e.g. 2024">
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="filter-label">Genre</label>
+                <select name="genre" class="filter-select">
+                    <option value="">All Genres</option>
+                    @foreach (var g in Model.Genres)
+                    {
+                        <option value="@g.Id" selected="@(Model.Genre == g.Id)">@g.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="filter-label">Min Rating</label>
+                <select name="rating" class="filter-select">
+                    <option value="">Any</option>
+                    @foreach (var r in new[] { 5.0, 6.0, 7.0, 8.0, 9.0 })
+                    {
+                        <option value="@r" selected="@(Model.Rating == r)">@r+</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="filter-label">Sort By</label>
+                <select name="sort_by" class="filter-select">
+                    <option value="popularity.desc" selected="@(Model.SortBy == "popularity.desc")">Popularity</option>
+                    <option value="vote_average.desc" selected="@(Model.SortBy == "vote_average.desc")">Rating (High to Low)</option>
+                    <option value="release_date.desc" selected="@(Model.SortBy == "release_date.desc")">Release Date (Newest)</option>
+                    <option value="release_date.asc" selected="@(Model.SortBy == "release_date.asc")">Release Date (Oldest)</option>
+                    <option value="original_title.asc" selected="@(Model.SortBy == "original_title.asc")">Title (A-Z)</option>
+                </select>
+            </div>
+        </div>
+        <div class="filter-buttons">
+            <button type="submit" class="btn btn-primary">Apply Filters</button>
+            <a asp-action="Index" asp-route-discover="@Model.Discover" asp-route-query="@Model.Query" class="reset-filters">Reset</a>
+        </div>
+    </form>
+
+    @if (Model.Results.Count > 0)
+    {
+        <p class="text-muted mb-4">@Model.TotalResults results found</p>
+        <div class="movie-grid">
+            @foreach (var movie in Model.Results)
+            {
+                <div class="movie-card-container">
+                    <a asp-controller="Movies" asp-action="Details" asp-route-id="@movie.Id" class="movie-card text-decoration-none">
+                        <img src="@movie.PosterUrl" class="movie-poster" alt="@movie.Title">
+                        <div class="movie-info-overlay">
+                            <div class="text-white fw-bold">@movie.Title</div>
+                            <div class="d-flex justify-content-between text-muted small">
+                                <span>@(movie.ReleaseYear?.ToString() ?? "N/A")</span>
+                                <span style="color: var(--mm-yellow);">@Math.Round(movie.VoteAverage, 1)</span>
+                            </div>
+                        </div>
+                    </a>
+                    <div class="movie-actions">
+                        <button class="btn btn-outline-light btn-add-to-list" data-movie-id="@movie.Id"><i class="fas fa-plus"></i></button>
+                        <button class="btn btn-outline-danger btn-add-to-favorites" data-movie-id="@movie.Id"><i class="fas fa-heart"></i></button>
+                        <button class="btn btn-outline-danger btn-add-to-custom" data-movie-id="@movie.Id" title="Manage lists"><i class="fas fa-list"></i></button>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (Model.TotalPages > 1)
+        {
+            <nav class="pagination">
+                @if (Model.Page > 1)
+                {
+                    <a class="page-link" asp-action="Index" asp-all-route-data="@(new Dictionary<string, string?> {
+                        ["query"] = Model.Query, ["discover"] = Model.Discover ? "true" : null,
+                        ["year_from"] = Model.YearFrom?.ToString(), ["year_to"] = Model.YearTo?.ToString(),
+                        ["genre"] = Model.Genre?.ToString(), ["rating"] = Model.Rating?.ToString(),
+                        ["sort_by"] = Model.SortBy, ["page"] = (Model.Page - 1).ToString()
+                    })">&laquo; Prev</a>
+                }
+                @for (var i = Model.StartPage; i <= Model.EndPage; i++)
+                {
+                    <span class="page-item @(i == Model.Page ? "active" : "")">
+                        <a class="page-link" asp-action="Index" asp-all-route-data="@(new Dictionary<string, string?> {
+                            ["query"] = Model.Query, ["discover"] = Model.Discover ? "true" : null,
+                            ["year_from"] = Model.YearFrom?.ToString(), ["year_to"] = Model.YearTo?.ToString(),
+                            ["genre"] = Model.Genre?.ToString(), ["rating"] = Model.Rating?.ToString(),
+                            ["sort_by"] = Model.SortBy, ["page"] = i.ToString()
+                        })">@i</a>
+                    </span>
+                }
+                @if (Model.Page < Model.TotalPages)
+                {
+                    <a class="page-link" asp-action="Index" asp-all-route-data="@(new Dictionary<string, string?> {
+                        ["query"] = Model.Query, ["discover"] = Model.Discover ? "true" : null,
+                        ["year_from"] = Model.YearFrom?.ToString(), ["year_to"] = Model.YearTo?.ToString(),
+                        ["genre"] = Model.Genre?.ToString(), ["rating"] = Model.Rating?.ToString(),
+                        ["sort_by"] = Model.SortBy, ["page"] = (Model.Page + 1).ToString()
+                    })">Next &raquo;</a>
+                }
+            </nav>
+        }
+    }
+    else if (!string.IsNullOrEmpty(Model.Query) || Model.Discover || Model.YearFrom.HasValue || Model.Genre.HasValue)
+    {
+        <div class="text-center py-5">
+            <i class="fas fa-film fa-3x mb-3" style="color: var(--mm-gray);"></i>
+            <h3>No movies found</h3>
+            <p class="text-muted">Try adjusting your filters or search terms.</p>
+        </div>
+    }
+</section>
+
+@section Scripts {
+    <script src="~/js/script.js" asp-append-version="true"></script>
+}

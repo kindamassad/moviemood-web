@@ -1,0 +1,87 @@
+﻿@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@{
+    var isLoggedIn = Context.Session.IsLoggedIn();
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - Movie Mood</title>
+    <link rel="icon" type="image/x-icon" href="~/popcorn.png">
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" asp-append-version="true">
+    <link rel="stylesheet" href="~/lib/font-awesome/css/all.min.css" asp-append-version="true">
+    <link rel="stylesheet" href="~/css/style.css" asp-append-version="true">
+    <link href="https://fonts.googleapis.com/css2?family=Netflix+Sans:wght@300;400;700&display=swap" rel="stylesheet">
+    @if (ViewData["IncludeCsrf"] as bool? ?? true)
+    {
+        <meta name="csrf-token" content="@Antiforgery.GetAndStoreTokens(Context).RequestToken">
+    }
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body class="@ViewData["BodyClass"]">
+    <nav class="navbar navbar-expand-lg top-0 left-0 right-0">
+        <div class="container-fluid">
+            <a class="navbar-brand movie-mood-logo" asp-controller="Home" asp-action="Index">MOVIEMOODS</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link text-white" asp-controller="Home" asp-action="Index">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" asp-controller="Search" asp-action="Index" asp-route-discover="true">Movies</a>
+                    </li>
+                    @if (isLoggedIn)
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link text-white" asp-controller="Lists" asp-action="Index" asp-route-list_type="favorites">Favorites</a>
+                        </li>
+                    }
+                    <li class="nav-item">
+                        <a class="nav-link text-white" asp-controller="Mood" asp-action="Index">Mood</a>
+                    </li>
+                </ul>
+                <form class="d-flex me-2" asp-controller="Search" asp-action="Index" method="get">
+                    <div class="input-group">
+                        <input type="text" name="query" class="form-control bg-dark text-white border-0" placeholder="Titles, people, genres">
+                        <button class="btn btn-outline-secondary" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </form>
+                <div class="d-flex gap-2 mt-3 mt-lg-0">
+                    @if (isLoggedIn)
+                    {
+                        <a asp-controller="Account" asp-action="Index" class="text-white btn btn-danger" style="text-decoration:none; border-radius:4px;">Profile</a>
+                        <a asp-controller="Account" asp-action="Logout" class="text-white btn btn-danger" style="text-decoration:none; border-radius:4px;">Logout</a>
+                    }
+                    else
+                    {
+                        @if (!string.Equals(ViewContext.RouteData.Values["action"]?.ToString(), "Login", StringComparison.OrdinalIgnoreCase))
+                        {
+                            <a asp-controller="Account" asp-action="Login" class="text-white btn btn-danger" style="text-decoration:none; border-radius:4px;">Login</a>
+                        }
+                        @if (!string.Equals(ViewContext.RouteData.Values["action"]?.ToString(), "Register", StringComparison.OrdinalIgnoreCase))
+                        {
+                            <a asp-controller="Account" asp-action="Register" class="text-white btn btn-danger" style="text-decoration:none; border-radius:4px;">Register</a>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    @RenderBody()
+
+    <footer class="d-flex align-items-center justify-content-center">
+        <p>&copy; @DateTime.Now.Year Movie Mood. All rights reserved.</p>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js" asp-append-version="true"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

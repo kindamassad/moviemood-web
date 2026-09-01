@@ -1,0 +1,94 @@
+@model MoodIndexViewModel
+@{
+    ViewData["Title"] = "Find a Movie for Your Mood";
+    ViewData["BodyClass"] = "mood-page";
+}
+
+@section Styles {
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    body.mood-page { background-color: #0f0f12; color: white; font-family: 'Poppins', sans-serif; }
+    .main-content { padding-top: 120px; padding-bottom: 50px; }
+    .mood-title { font-family: 'Poppins', sans-serif; font-size: 2.75rem; font-weight: 700; margin-bottom: 12px; color: white; letter-spacing: -0.5px; }
+    .mood-subtitle { font-size: 1rem; color: #8c8c8c; margin-bottom: 40px; }
+    .mood-options { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; margin-bottom: 48px; max-width: 1100px; margin-left: auto; margin-right: auto; }
+    .mood-option { --mood-accent: var(--mm-red); min-width: 130px; padding: 18px 22px; border-radius: 12px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease; border: 1px solid rgba(255, 255, 255, 0.08); background: linear-gradient(145deg, #1c1c1c 0%, #151518 100%); color: white; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; position: relative; overflow: hidden; }
+    .mood-icon { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.06); color: var(--mood-accent); font-size: 1.15rem; position: relative; z-index: 1; }
+    .mood-option:hover { transform: translateY(-6px) scale(1.03); border-color: color-mix(in srgb, var(--mood-accent) 55%, transparent); box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45); }
+    .mood-option.active { border-color: var(--mood-accent); background: linear-gradient(145deg, color-mix(in srgb, var(--mood-accent) 22%, #1c1c1c) 0%, #151518 100%); }
+    .suggestions-heading { font-size: 1.5rem; font-weight: 600; margin-bottom: 24px; text-align: center; }
+    .suggestions-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 40px; }
+    .suggestion-card { background: linear-gradient(145deg, #1c1c1c 0%, #141418 100%); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; overflow: hidden; transition: transform 0.25s ease, box-shadow 0.25s ease; }
+    .suggestion-card:hover { transform: translateY(-6px); box-shadow: 0 14px 30px rgba(0, 0, 0, 0.45); }
+    .suggestion-poster { width: 100%; height: 360px; object-fit: cover; display: block; }
+    .suggestion-body { padding: 20px; }
+    .suggestion-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 12px; color: white; }
+    .suggestion-title a { color: inherit; text-decoration: none; }
+    .suggestion-meta { display: flex; gap: 16px; margin-bottom: 12px; color: #8c8c8c; font-size: 0.9rem; }
+    .suggestion-meta i { color: var(--mm-yellow); margin-right: 4px; }
+    .suggestion-overview { font-size: 0.92rem; line-height: 1.5; color: #ccc; margin-bottom: 16px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .suggestion-link { background-color: var(--mm-red); color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: 600; }
+    .suggestion-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    @@media (max-width: 992px) { .suggestions-grid { grid-template-columns: 1fr; } .suggestion-poster { height: 420px; } }
+</style>
+}
+
+<section class="container main-content">
+    <div class="text-center mb-5">
+        <h1 class="mood-title">What is your mood today?</h1>
+        <p class="mood-subtitle">Pick a mood and we'll suggest 3 movies for you</p>
+    </div>
+
+    <div class="mood-options">
+        @foreach (var (key, mood) in Model.Moods)
+        {
+            <a asp-action="Index" asp-route-mood="@key"
+               class="mood-option text-decoration-none @(Model.SelectedMood == key ? "active" : "")"
+               style="--mood-accent: @mood.Color;">
+                <span class="mood-icon"><i class="fas @mood.Icon"></i></span>
+                <span class="mood-label">@mood.Label</span>
+            </a>
+        }
+    </div>
+
+    @if (Model.SuggestedMovies.Count > 0 && Model.SelectedMoodData != null)
+    {
+        <h2 class="suggestions-heading">Top picks for @Model.SelectedMoodData.Label mood</h2>
+        <div class="suggestions-grid">
+            @foreach (var movie in Model.SuggestedMovies)
+            {
+                <article class="suggestion-card">
+                    <a asp-controller="Movies" asp-action="Details" asp-route-id="@movie.Id">
+                        <img src="@movie.PosterUrl" class="suggestion-poster" alt="@movie.Title">
+                    </a>
+                    <div class="suggestion-body">
+                        <h3 class="suggestion-title">
+                            <a asp-controller="Movies" asp-action="Details" asp-route-id="@movie.Id">@movie.Title</a>
+                        </h3>
+                        <div class="suggestion-meta">
+                            <span><i class="fas fa-star"></i>@Math.Round(movie.VoteAverage, 1)</span>
+                            <span><i class="fas fa-calendar-alt"></i>@(movie.ReleaseYear?.ToString() ?? "N/A")</span>
+                        </div>
+                        <p class="suggestion-overview">@(string.IsNullOrEmpty(movie.Overview) ? "Synopsis not available." : movie.Overview)</p>
+                        <div class="suggestion-actions">
+                            <a asp-controller="Movies" asp-action="Details" asp-route-id="@movie.Id" class="suggestion-link">View Details</a>
+                            <button class="btn btn-outline-light btn-sm btn-add-to-list" data-movie-id="@movie.Id"><i class="fas fa-plus"></i></button>
+                            <button class="btn btn-outline-danger btn-sm btn-add-to-favorites" data-movie-id="@movie.Id"><i class="fas fa-heart"></i></button>
+                            <button class="btn btn-outline-danger btn-sm btn-add-to-custom" data-movie-id="@movie.Id" title="Manage lists"><i class="fas fa-list"></i></button>
+                        </div>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(Model.SelectedMood))
+    {
+        <div class="alert alert-warning text-center">
+            <i class="fas fa-exclamation-circle"></i> We could not find movies for this mood. Please try again!
+        </div>
+    }
+</section>
+
+@section Scripts {
+    <script src="~/js/script.js" asp-append-version="true"></script>
+}

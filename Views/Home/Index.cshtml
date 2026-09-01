@@ -1,0 +1,106 @@
+﻿@model HomeIndexViewModel
+@{
+    ViewData["Title"] = "Your Personal Netflix";
+}
+
+@section Styles {
+<style>
+    .hero-section { height: 100vh; min-height: 600px; position: relative; background-size: cover; background-position: center; display: flex; align-items: center; padding: 0 12rem; }
+    .hero-section::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to top, var(--mm-dark) 0%, transparent 50%), linear-gradient(to right, var(--mm-dark) 30%, transparent 70%); }
+    .hero-content { position: relative; z-index: 2; max-width: 600px; }
+    .hero-title { font-size: 3.5rem; font-weight: 700; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+    .hero-description { font-size: 1.2rem; margin-bottom: 30px; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+    .btn-trailer { background-color: var(--mm-red); color: white; border: none; font-weight: 600; padding: 10px 25px; border-radius: 4px; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: all 0.3s; }
+    .btn-trailer:hover { background-color: var(--mm-red); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(229, 9, 20, 0.4); color: white; }
+    .btn-info { background-color: rgba(0, 0, 0, 0.5); color: white; border: 1px solid white; font-weight: 600; padding: 10px 25px; border-radius: 4px; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: all 0.3s; }
+    .btn-info:hover { background-color: rgba(255, 255, 255, 0.1); transform: translateY(-2px); color: white; }
+    .movie-row { margin-bottom: 50px; padding: 0 60px; }
+    .row-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 20px; padding-left: 10px; }
+    .movie-carousel { display: flex; overflow-x: auto; scroll-behavior: smooth; padding: 10px 0; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .movie-carousel::-webkit-scrollbar { display: none; }
+    .movie-card { flex: 0 0 auto; width: 220px; position: relative; border-radius: 4px; overflow: hidden; cursor: pointer; transition: transform 0.3s, box-shadow 0.3s; }
+    .movie-card:hover { transform: scale(1.05); z-index: 10; box-shadow: 0 5px 15px rgba(229, 9, 20, 0.4); }
+    .movie-poster { width: 100%; height: 330px; object-fit: cover; border-radius: 4px; }
+    .movie-info { position: absolute; bottom: 0; left: 0; right: 0; background: var(--mm-dark); padding: 15px; transform: translateY(100%); transition: transform 0.3s; border-bottom-left-radius: 4px; border-bottom-right-radius: 4px; }
+    .movie-card:hover .movie-info { transform: translateY(0); }
+    .movie-name { font-weight: 600; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .movie-meta { display: flex; justify-content: space-between; color: var(--mm-gray); font-size: 0.9rem; }
+    .movie-rating { color: var(--mm-yellow); font-weight: 600; }
+    .movie-link { display: block; position: relative; z-index: 1; }
+    .hero-section.hero-fallback { background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('/images/backdrops/default.svg'); background-color: var(--mm-dark); }
+    @@media (max-width: 768px) {
+        .hero-section { padding: 0 20px; height: 80vh; }
+        .hero-title { font-size: 2.5rem; }
+        .hero-description { font-size: 1rem; }
+        .movie-row { padding: 0 20px; }
+        .movie-card { width: 160px; }
+        .movie-poster { height: 240px; }
+    }
+</style>
+}
+
+<section class="hero-section @(Model.FeaturedMovie == null ? "hero-fallback" : "")"
+         style="@(Model.FeaturedMovie != null ? $"background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('{Model.FeaturedMovie.BackdropUrl}')" : "")">
+    <div class="hero-content">
+        @if (Model.FeaturedMovie != null)
+        {
+            <h1 class="hero-title">@Model.FeaturedMovie.Title</h1>
+            <p class="hero-description">@(Model.FeaturedMovie.Overview?.Length > 150 ? Model.FeaturedMovie.Overview[..150] + "..." : Model.FeaturedMovie.Overview)</p>
+            <div class="d-flex gap-3">
+                <a class="btn-trailer text-uppercase" asp-controller="Movies" asp-action="Details" asp-route-id="@Model.FeaturedMovie.Id" asp-route-playTrailer="true">
+                    <i class="fas fa-play"></i> Watch Trailer
+                </a>
+                <a class="btn-info text-uppercase" asp-controller="Movies" asp-action="Details" asp-route-id="@Model.FeaturedMovie.Id">
+                    <i class="fas fa-info-circle"></i> More Info
+                </a>
+            </div>
+        }
+        else
+        {
+            <h1 class="hero-title">Movie Mood</h1>
+            <p class="hero-description">Explore movies, build lists, and discover personalized recommendations.</p>
+            <div class="d-flex gap-3">
+                <a class="btn-trailer text-uppercase" asp-controller="Search" asp-action="Index" asp-route-discover="true">
+                    <i class="fas fa-search"></i> Browse Movies
+                </a>
+                <a class="btn-info text-uppercase" asp-controller="Account" asp-action="Register">
+                    <i class="fas fa-user-plus"></i> Create Account
+                </a>
+            </div>
+        }
+    </div>
+</section>
+
+@foreach (var (key, title) in Model.CategoryTitles)
+{
+    if (!Model.MoviesData.TryGetValue(key, out var movies) || movies.Count == 0) continue;
+    <div class="movie-row">
+        <h2 class="row-title">@title</h2>
+        <div class="movie-carousel">
+            @foreach (var movie in movies.Take(6))
+            {
+                <div class="movie-card">
+                    <a asp-controller="Movies" asp-action="Details" asp-route-id="@movie.Id" class="movie-link">
+                        <img src="@movie.PosterUrl" class="movie-poster" alt="@movie.Title">
+                        <div class="movie-info">
+                            <div class="movie-name text-white">@movie.Title</div>
+                            <div class="movie-meta">
+                                <span>@(movie.ReleaseYear?.ToString() ?? "N/A")</span>
+                                <span class="movie-rating">@Math.Round(movie.VoteAverage, 1)</span>
+                            </div>
+                        </div>
+                    </a>
+                    <div class="movie-actions">
+                        <button class="btn btn-outline-light btn-add-to-list" data-movie-id="@movie.Id"><i class="fas fa-plus"></i></button>
+                        <button class="btn btn-outline-danger btn-add-to-favorites" data-movie-id="@movie.Id"><i class="fas fa-heart"></i></button>
+                        <button class="btn btn-outline-danger btn-add-to-custom" data-movie-id="@movie.Id" title="Manage lists"><i class="fas fa-list"></i></button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script src="~/js/script.js" asp-append-version="true"></script>
+}

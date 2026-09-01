@@ -1,0 +1,23 @@
+appsettings.Local.json
+.env
+.env.*
+
+vendor/
+api/
+includes/
+scripts/
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Logs
+*.log

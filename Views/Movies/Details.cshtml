@@ -1,0 +1,143 @@
+@model MovieDetailsViewModel
+@{
+    ViewData["Title"] = Model.Movie.Title;
+    var movie = Model.Movie;
+}
+
+@section Styles {
+<style>
+    .main-content { padding-top: 120px; }
+    .result-poster { width: 100%; height: 500px; object-fit: cover; }
+    .result-title { font-size: 2.5rem; font-weight: 700; margin-bottom: 20px; }
+    .result-phrase { font-size: 1.3rem; color: var(--mm-red); font-style: italic; margin-bottom: 20px; padding-left: 15px; border-left: 3px solid var(--mm-red); }
+    .result-overview { font-size: 1.1rem; line-height: 1.6; margin-bottom: 30px; }
+    .movie-details { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
+    .detail-item { display: flex; align-items: center; gap: 5px; font-size: 0.9rem; color: var(--mm-gray); }
+    .detail-item i { color: var(--mm-yellow); }
+    .movie-genres { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+    .genre-badge { background-color: rgba(229, 9, 20, 0.2); color: var(--mm-red); padding: 5px 10px; border-radius: 20px; font-size: 0.8rem; }
+    .disabled-btn { opacity: 0.6; cursor: not-allowed; background-color: var(--mm-gray) !important; }
+    .watch-btn { background-color: var(--mm-red); border: none; font-weight: 600; padding: 10px 25px; border-radius: 4px; transition: all 0.3s; display: flex; align-items: center; gap: 8px; color: white; }
+    .watch-btn:hover { background-color: #F40612; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(229, 9, 20, 0.4); }
+    .back-btn { background-color: transparent; border: 1px solid var(--mm-gray); color: white; font-weight: 600; padding: 10px 25px; border-radius: 4px; transition: all 0.3s; display: flex; align-items: center; gap: 8px; text-decoration: none; }
+    .back-btn:hover { background-color: rgba(255, 255, 255, 0.1); transform: translateY(-2px); color: white; }
+    .cast-section { margin-top: 50px; }
+    .cast-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 20px; }
+    .cast-card { text-align: center; margin-bottom: 20px; }
+    .cast-photo { width: 100%; height: 180px; object-fit: cover; border-radius: 4px; margin-bottom: 10px; }
+    .cast-name { font-weight: 600; font-size: 0.9rem; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cast-character { color: var(--mm-gray); font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .similar-section { margin: 50px 0; }
+    .similar-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 20px; }
+    .similar-poster { width: 100%; height: 240px; object-fit: cover; border-radius: 4px; transition: transform 0.3s; }
+    .similar-card:hover .similar-poster { transform: scale(1.05); }
+    .similar-name { font-size: 0.9rem; margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .trailer-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); display: flex; justify-content: center; align-items: center; z-index: 9999; opacity: 0; visibility: hidden; transition: all 0.3s; }
+    .trailer-modal.active { opacity: 1; visibility: visible; }
+    .trailer-modal-content { width: 90%; max-width: 900px; position: relative; }
+    .close-trailer { position: absolute; top: -40px; right: 0; color: white; font-size: 2rem; cursor: pointer; background: none; border: none; }
+    .trailer-iframe-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; }
+    .trailer-iframe-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
+</style>
+}
+
+<section class="container main-content">
+    <div class="row result-card">
+        <div class="col-md-4">
+            <img src="@movie.PosterUrl" class="result-poster" alt="@movie.Title">
+        </div>
+        <div class="col-md-8">
+            <h2 class="result-title">@movie.Title</h2>
+            @if (!string.IsNullOrEmpty(movie.Tagline))
+            {
+                <p class="result-phrase">@movie.Tagline</p>
+            }
+            <div class="movie-details">
+                <div class="detail-item"><i class="fas fa-star"></i><span>@Math.Round(movie.VoteAverage, 1)/10</span></div>
+                <div class="detail-item"><i class="fas fa-calendar-alt"></i><span>@(movie.ReleaseDate?.ToString("dd/MM/yyyy") ?? "N/A")</span></div>
+                <div class="detail-item"><i class="fas fa-clock"></i><span>@(movie.Runtime?.ToString() ?? "--") min</span></div>
+                <div class="detail-item"><i class="fas fa-language"></i><span class="text-uppercase">@movie.OriginalLanguage</span></div>
+            </div>
+            <div class="movie-genres">
+                @foreach (var genre in movie.AllGenres)
+                {
+                    <span class="genre-badge">@genre.Name</span>
+                }
+            </div>
+            <p class="result-overview">@(string.IsNullOrEmpty(movie.Overview) ? "Synopsis not available." : movie.Overview)</p>
+            @if (!string.IsNullOrEmpty(movie.Director))
+            {
+                <p><span style="color: var(--mm-yellow);">Director:</span> @movie.Director</p>
+            }
+            <div class="d-flex gap-3">
+                <button class="watch-btn text-white @(string.IsNullOrEmpty(movie.TrailerKey) ? "disabled-btn" : "")" id="watchTrailerBtn"
+                        disabled="@(string.IsNullOrEmpty(movie.TrailerKey))" data-trailer-key="@movie.TrailerKey">
+                    <i class="fas fa-play"></i> @(string.IsNullOrEmpty(movie.TrailerKey) ? "TRAILER UNAVAILABLE" : "WATCH TRAILER")
+                </button>
+                <a asp-controller="Home" asp-action="Index" class="back-btn"><i class="fas fa-arrow-left"></i> HOME</a>
+            </div>
+            <div class="d-flex gap-3 mt-3">
+                <button class="btn btn-outline-light btn-add-to-list" data-movie-id="@movie.Id"><i class="fas fa-plus"></i></button>
+                <button class="btn btn-outline-danger btn-add-to-favorites" data-movie-id="@movie.Id"><i class="fas fa-heart"></i></button>
+                <button class="btn btn-outline-danger btn-add-to-custom" data-movie-id="@movie.Id" title="Manage lists"><i class="fas fa-list"></i></button>
+            </div>
+        </div>
+        @if (movie.CastMembers.Count > 0)
+        {
+            <div class="col-12">
+                <div class="cast-section">
+                    <h3 class="cast-title">Main Cast</h3>
+                    <div class="row">
+                        @foreach (var actor in movie.CastMembers.Take(10))
+                        {
+                            <div class="col-6 col-sm-4 col-md-3 col-lg-2 mb-4">
+                                <div class="cast-card">
+                                    <img src="@actor.PhotoUrl" class="cast-photo w-100" alt="@actor.Name">
+                                    <div class="cast-name">@actor.Name</div>
+                                    <div class="cast-character">@actor.CharacterName</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+    @if (Model.SimilarMovies.Count > 0)
+    {
+        <div class="similar-section">
+            <h3 class="similar-title">Similar Movies</h3>
+            <div class="row">
+                @foreach (var similar in Model.SimilarMovies)
+                {
+                    <div class="col-6 col-md-4 col-lg-2 mb-4">
+                        <a asp-controller="Movies" asp-action="Details" asp-route-id="@similar.Id" class="similar-card text-decoration-none">
+                            <img src="@similar.PosterUrl" class="similar-poster w-100" alt="@similar.Title">
+                            <div class="similar-name text-white mt-2">@similar.Title</div>
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</section>
+
+<div class="trailer-modal" id="trailerModal">
+    <div class="trailer-modal-content">
+        <button class="close-trailer">&times;</button>
+        <div class="trailer-iframe-container" id="trailerIframeContainer"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/script.js" asp-append-version="true"></script>
+    @if (Model.PlayTrailer && !string.IsNullOrEmpty(movie.TrailerKey))
+    {
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const btn = document.getElementById('watchTrailerBtn');
+                if (btn && !btn.disabled) setTimeout(() => btn.click(), 800);
+            });
+        </script>
+    }
+}

@@ -1,0 +1,519 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
+
+:root {
+    --mm-red: #e50914;
+    --mm-dark: #141414;
+    --mm-gray: #808080;
+    --mm-light: #e5e5e5;
+    --mm-yellow: #F5C518;
+}
+
+body {
+    background-color: var(--mm-dark);
+    color: white;
+    font-family: 'Netflix Sans', sans-serif;
+    min-height: 100vh;
+}
+
+.navbar {
+    background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%);
+    padding: 20px 40px;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+    transition: background-color 0.4s;
+}
+
+.navbar.scrolled {
+    background-color: var(--mm-dark);
+}
+
+.movie-mood-logo {
+    color: var(--mm-red);
+    font-family: 'Bebas Neue', 'Impact', sans-serif;
+    font-weight: 400;
+    font-size: 2.5rem;
+    letter-spacing: -1px;
+    line-height: 1;
+    text-transform: uppercase;
+    white-space: nowrap;
+    padding: 5px 10px;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.movie-mood-logo:hover {
+    color: var(--mm-yellow);
+}
+
+.movie-actions {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.movie-card:hover .movie-actions {
+    opacity: 1;
+}
+
+.btn-add-to-list, 
+.btn-add-to-favorites,
+.btn-add-to-custom {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 1px solid transparent;
+}
+
+.btn-add-to-list {
+    transition: all 0.3s ease;
+    border-color: #fff;
+    color: #fff;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.btn-add-to-favorites {
+    border-color: var(--mm-red);
+    color: var(--mm-red);
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.btn-add-to-custom {
+    border-color: var(--mm-yellow);
+    color: var(--mm-yellow);
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.btn-add-to-list:hover {
+    background-color: var(--mm-yellow);
+    border-color: var(--mm-yellow);
+    color: #000;
+}
+
+.btn-add-to-favorites:hover {
+    background-color: var(--mm-red);
+    color: #fff;
+}
+
+.btn-add-to-custom:hover {
+    background-color: var(--mm-yellow);
+    color: #000;
+}
+
+.btn-add-to-list.active {
+    background-color: var(--mm-yellow);
+    color: #000;
+    border-color: var(--mm-yellow);
+}
+
+.btn-add-to-favorites.active {
+    background-color: var(--mm-red);
+    color: #fff;
+    border-color: var(--mm-red);
+}
+
+.btn-add-to-custom.active {
+    background-color: var(--mm-yellow);
+    color: #000;
+    border-color: var(--mm-yellow);
+}
+
+.btn-add-to-list.active::after {
+    display: none;
+}
+
+.btn-add-to-custom:hover {
+    background-color: var(--mm-red);
+    transform: scale(1.1);
+}
+
+.custom-list-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    backdrop-filter: blur(5px);
+}
+
+.custom-list-modal.active {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-content {
+    background-color: #181818;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    padding: 20px;
+    border: 1px solid #333;
+    box-shadow: 0 5px 25px rgba(0,0,0,0.5);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #333;
+}
+
+.modal-title {
+    color: white;
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.close-modal-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 5px;
+}
+
+.close-modal-btn:hover {
+    color: var(--mm-red);
+}
+
+.lists-container {
+    margin-bottom: 20px;
+}
+
+.lists-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.lists-container::-webkit-scrollbar-track {
+    background: #333;
+}
+
+.lists-container::-webkit-scrollbar-thumb {
+    background-color: var(--mm-red);
+    border-radius: 3px;
+}
+
+.list-option {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #333;
+    color: white;
+    border: none;
+    padding: 12px 15px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    width: 100%;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.list-option:hover {
+    background-color: #444;
+}
+
+.list-option i {
+    font-size: 0.9rem;
+}
+
+.list-option.added {
+    background-color: var(--mm-red);
+}
+
+.list-option.added .list-check {
+    display: block;
+}
+
+.list-option.added .list-icon {
+    display: none;
+}
+
+.list-check {
+    display: none;
+    color: white;
+}
+
+.remove-btn {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.3s;
+    padding: 5px;
+    margin-left: 10px;
+}
+
+.remove-btn:hover {
+    opacity: 1;
+}
+
+.list-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.new-list-form {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.new-list-input {
+    flex: 1;
+    padding: 10px 15px;
+    background-color: #333;
+    border: 1px solid #444;
+    color: white;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.new-list-input:focus {
+    outline: none;
+    border-color: var(--mm-red);
+}
+
+.create-list-btn {
+    background-color: var(--mm-red);
+    color: white;
+    border: none;
+    padding: 0 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.create-list-btn:hover {
+    background-color: #f40612;
+}
+
+.login-page, .register-page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.login-container, .register-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-grow: 1;
+    width: 100%;
+    padding: 20px;
+}
+
+.login-box, .register-box {
+    background-color: rgba(0, 0, 0, 0.75);
+    padding: 40px;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    margin: 20px;
+}
+
+.login-box form, .register-box form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.login-box input, 
+.register-box input {
+    width: 100%;
+    padding: 12px 15px;
+    background: #333;
+    border: 1px solid #444;
+    color: white;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.password-field {
+    position: relative;
+    width: 100%;
+}
+
+.password-field input {
+    width: 100%;
+    padding-right: 44px;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--mm-gray);
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+    transition: color 0.2s ease;
+}
+
+.password-toggle:hover {
+    color: white;
+}
+
+.password-section .password-field input {
+    background: #0f0f12;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    padding: 12px 44px 12px 14px;
+    border-radius: 8px;
+}
+
+.password-section .password-field input:focus {
+    outline: none;
+    border-color: var(--mm-red);
+}
+
+.password-section .password-toggle {
+    color: #8c8c8c;
+}
+
+.password-section .password-toggle:hover {
+    color: #fff;
+}
+
+.login-box input:focus, 
+.register-box input:focus {
+    outline: none;
+    border-color: var(--mm-red);
+}
+
+.login-box button, 
+.register-box button {
+    background-color: var(--mm-red);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    transition: background-color 0.3s;
+}
+
+.login-box button:hover, 
+.register-box button:hover {
+    background-color: #f40612;
+}
+
+.login-box a, 
+.register-box a {
+    color: var(--mm-gray);
+    text-decoration: none;
+    transition: color 0.3s;
+    display: block;
+    text-align: center;
+    margin-top: 15px;
+}
+
+.login-box a:hover, 
+.register-box a:hover {
+    color: var(--mm-light);
+}
+
+.error {
+    color: var(--mm-red);
+    background-color: rgba(229, 9, 20, 0.1);
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    text-align: center;
+    font-size: 14px;
+}
+
+.login-box h2, 
+.register-box h2 {
+    color: white;
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 28px;
+}
+
+footer {
+    width: 100%;
+    padding: 20px;
+    text-align: center;
+    background-color: var(--mm-dark);
+    position: relative;
+    z-index: 1;
+}
+
+.toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 24px;
+    border-radius: 4px;
+    color: white;
+    font-weight: 600;
+    z-index: 1100;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.toast.show {
+    opacity: 1;
+}
+
+.toast-success {
+    background-color: #28a745;
+}
+
+.toast-error {
+    background-color: #dc3545;
+}
+
+@media (max-width: 768px) {
+    .result-section {
+        margin: 80px auto 50px;
+    }
+
+    .result-poster {
+        height: 350px;
+    }
+
+    .result-title {
+        font-size: 1.8rem;
+    }
+
+    .result-content {
+        padding: 20px;
+    }
+}
